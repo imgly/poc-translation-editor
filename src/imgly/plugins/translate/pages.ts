@@ -34,8 +34,10 @@ export interface InsertImagePageArgs {
  * `appendTranslatedPage` — not serialized into scene saves).
  *
  * Caller owns the `engine.editor.addUndoStep()`.
+ *
+ * @returns the created page block id, so callers can position it.
  */
-export async function insertImagePage(args: InsertImagePageArgs): Promise<void> {
+export async function insertImagePage(args: InsertImagePageArgs): Promise<number> {
   const { engine, parent, index, label, blob, width, height } = args;
 
   const bufferUri = engine.editor.createBuffer();
@@ -66,6 +68,8 @@ export async function insertImagePage(args: InsertImagePageArgs): Promise<void> 
   engine.block.setHeight(imageBlock, height);
 
   engine.block.appendChild(page, imageBlock);
+
+  return page;
 }
 
 export interface AppendTranslatedPageArgs {

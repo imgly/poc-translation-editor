@@ -130,15 +130,33 @@ export async function runMagicLayersTranslation(
     if (pageParent == null) {
       throw new Error('Layerized page has no parent — cannot prepend Original.');
     }
-    await insertImagePage({
+    const flatWidth = engine.block.getFrameWidth(templatePage);
+    const flatHeight = engine.block.getFrameHeight(templatePage);
+    const originalPage = await insertImagePage({
       engine,
       parent: pageParent,
       index: 0,
       label: 'Original',
       blob: sourceBlob,
-      width: engine.block.getFrameWidth(templatePage),
-      height: engine.block.getFrameHeight(templatePage)
+      width: flatWidth,
+      height: flatHeight
     });
+
+    // Child-index 0 already makes "Original" first in engine.scene.getPages()
+    // (and the page list). But a model archive is typically a `Free`-layout
+    // scene where pages also float on a canvas and read left-to-right by
+    // position — and a freshly created page has no canvas position, so it
+    // lands beside/after the layerized page. Pin it to the left of the
+    // layerized page so it is unambiguously the first page both ways. In stack
+    // layouts page positions are managed by the layout, so we skip this.
+    if (engine.scene.getLayout() === 'Free') {
+      const layersX = engine.block.getGlobalBoundingBoxX(templatePage);
+      const layersY = engine.block.getGlobalBoundingBoxY(templatePage);
+      engine.block.setPositionXMode(originalPage, 'Absolute');
+      engine.block.setPositionYMode(originalPage, 'Absolute');
+      engine.block.setPositionX(originalPage, layersX - flatWidth - flatWidth * 0.1);
+      engine.block.setPositionY(originalPage, layersY);
+    }
 
     // Snapshot the template's text once — this is the translation source.
     // DFS order is stable, so a duplicate's text blocks line up by index.
