@@ -5,13 +5,17 @@
  * full, editable CE.SDK *scene* (the model returns a scene archive, not
  * loose blocks). Because a scene archive can only be loaded via
  * `engine.scene.loadFromArchiveURL` — which replaces the active document —
- * we make that scene the document and build the translated pages inside it:
+ * we make that scene the document and build the pages inside it:
  *
- *   - page 1 stays as the untranslated, editable "Original";
- *   - for each target language we duplicate that page, batch-translate its
- *     text blocks via the text gateway adapter, and rename it.
+ *   - page 1, "Original", is the flat source image (rebuilt from the bytes we
+ *     uploaded — the scene swap destroyed the source-image page we started
+ *     from) so the user can compare against the untouched original;
+ *   - page 2, "Original (Layers)", is the untranslated, editable scene;
+ *   - for each target language we duplicate the layers page, batch-translate
+ *     its text blocks via the text gateway adapter, and rename it.
  *
- * Result: an editable page per language. Text translation runs per language
+ * Result: the flat original, the editable layers, then a translated page per
+ * language. Text translation runs per language
  * via `Promise.allSettled` (a failure in one language doesn't block the
  * others); the scene mutations are applied sequentially on the single
  * shared scene.
@@ -20,6 +24,7 @@
 import type CreativeEditorSDK from '@cesdk/cesdk-js';
 
 import { getGatewayClient } from './translate';
+import { insertImagePage } from './pages';
 import { translateTexts } from './translateTexts';
 import { MAGIC_LAYERS_MODEL_ID, type TargetLanguage } from './providers';
 import { readOriginalImageBlob } from './sourceImage';
@@ -54,6 +59,10 @@ export async function runMagicLayersTranslation(
   // resource loader does not fetch — so we materialise it as a blob: URL,
   // the same scheme the rest of the app uses to feed the engine bytes.
   let archiveObjectUrl: string;
+  // The user's original bytes, read once in Phase 1 for the gateway upload and
+  // reused in Phase 2 to rebuild a flat "Original" page (loadFromArchiveURL
+  // replaces the document, destroying the source-image page we started from).
+  let sourceBlob: Blob;
   try {
     // Send the user's *original* bytes, not a re-render. Re-exporting the
     // block to PNG re-encodes the photo losslessly, which balloons a source
@@ -67,7 +76,7 @@ export async function runMagicLayersTranslation(
     // 'Pending' block — so mark Pending only AFTER reading (the Direct
     // pipeline does the same; reversing the order deadlocks the fallback
     // before any request is sent).
-    const sourceBlob =
+    sourceBlob =
       readOriginalImageBlob(engine, block) ??
       (await engine.block.export(block, { mimeType: 'image/png' }));
     engine.block.setState(block, { type: 'Pending', progress: 0 });
@@ -106,31 +115,30 @@ export async function runMagicLayersTranslation(
     // scene. `overrideEditorConfig: false` keeps our dock/panel setup.
     await engine.scene.loadFromArchiveURL(archiveObjectUrl, false);
 
-    /* eslint-disable no-console */
-    const allPages = engine.scene.getPages();
-    console.log(
-      `[Magic Layers] image-to-scene scene loaded: ${allPages.length} page(s).`
-    );
-    let sceneTextTotal = 0;
-    allPages.forEach((page, i) => {
-      const pageTextBlocks: number[] = [];
-      collectTextBlocks(engine, page, pageTextBlocks);
-      sceneTextTotal += pageTextBlocks.length;
-      console.log(
-        `  page [${i}] block #${page} "${engine.block.getName(page) || '(unnamed)'}": ` +
-          `${pageTextBlocks.length} text block(s)`
-      );
-    });
-    console.log(
-      `[Magic Layers] scene total: ${allPages.length} page(s), ${sceneTextTotal} text block(s).`
-    );
-    /* eslint-enable no-console */
-
-    const templatePage = allPages[0];
+    const templatePage = engine.scene.getPages()[0];
     if (templatePage == null) {
       throw new Error('Loaded scene has no pages.');
     }
-    engine.block.setName(templatePage, 'Original');
+    // The model's editable scene becomes the "layers" reference page; the flat
+    // source image is prepended as page 1 below so the user can compare.
+    engine.block.setName(templatePage, 'Original (Layers)');
+
+    // Prepend a flat page holding the untouched source image, sized to the
+    // layerized page so both share the document's page dimensions. Inserted at
+    // index 0 of the page parent so it lands before the layerized page.
+    const pageParent = engine.block.getParent(templatePage);
+    if (pageParent == null) {
+      throw new Error('Layerized page has no parent — cannot prepend Original.');
+    }
+    await insertImagePage({
+      engine,
+      parent: pageParent,
+      index: 0,
+      label: 'Original',
+      blob: sourceBlob,
+      width: engine.block.getFrameWidth(templatePage),
+      height: engine.block.getFrameHeight(templatePage)
+    });
 
     // Snapshot the template's text once — this is the translation source.
     // DFS order is stable, so a duplicate's text blocks line up by index.
@@ -139,19 +147,6 @@ export async function runMagicLayersTranslation(
     const originals = templateTextBlocks.map((tb) =>
       engine.block.getString(tb, 'text/text')
     );
-
-    /* eslint-disable no-console */
-    console.log(
-      `[Magic Layers] image-to-scene returned ${templateTextBlocks.length} text block(s):`
-    );
-    templateTextBlocks.forEach((tb, i) => {
-      console.log(
-        `  [${i}] block #${tb} (${engine.block.getType(tb)}): ${JSON.stringify(
-          originals[i]
-        )}`
-      );
-    });
-    /* eslint-enable no-console */
 
     // Translate every language in parallel (the gateway calls are the slow
     // part); apply the results to the scene sequentially below.
@@ -189,7 +184,9 @@ export async function runMagicLayersTranslation(
       added++;
     }
 
-    if (added > 0) engine.editor.addUndoStep();
+    // Always commit one undo step: even with zero successful translations we
+    // mutated the scene (renamed the layers page, prepended the Original page).
+    engine.editor.addUndoStep();
 
     if (failedLangs.length === 0) {
       cesdk.ui.showNotification({

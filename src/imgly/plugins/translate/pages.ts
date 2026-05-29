@@ -7,6 +7,67 @@
 
 import type CreativeEditorSDK from '@cesdk/cesdk-js';
 
+type Engine = CreativeEditorSDK['engine'];
+
+export interface InsertImagePageArgs {
+  engine: Engine;
+  /** Parent that holds the page order (page stack / scene root). */
+  parent: number;
+  /** Position among `parent`'s children; 0 prepends as the first page. */
+  index: number;
+  /** Page name shown in the page list. */
+  label: string;
+  /** Image bytes to place on the page. */
+  blob: Blob;
+  /** Page (and image-block) dimensions, in the scene's design unit. */
+  width: number;
+  height: number;
+}
+
+/**
+ * Build a page that holds a single full-bleed image block and insert it at
+ * `index` among `parent`'s children. Mirrors the page → graphic-block-with-
+ * image-fill structure used by `appendTranslatedPage` and the upload flow's
+ * `loadImageIntoScene`, so every image page in the document shares one shape.
+ *
+ * The bytes are staged as a transient `buffer://` URI (see the note in
+ * `appendTranslatedPage` — not serialized into scene saves).
+ *
+ * Caller owns the `engine.editor.addUndoStep()`.
+ */
+export async function insertImagePage(args: InsertImagePageArgs): Promise<void> {
+  const { engine, parent, index, label, blob, width, height } = args;
+
+  const bufferUri = engine.editor.createBuffer();
+  const arrayBuffer = await blob.arrayBuffer();
+  engine.editor.setBufferData(bufferUri, 0, new Uint8Array(arrayBuffer));
+
+  const page = engine.block.create('page');
+  engine.block.setName(page, label);
+  engine.block.setWidth(page, width);
+  engine.block.setHeight(page, height);
+  engine.block.insertChild(parent, page, index);
+
+  const imageBlock = engine.block.create('graphic');
+  engine.block.setShape(imageBlock, engine.block.createShape('rect'));
+  const fill = engine.block.createFill('image');
+  engine.block.setSourceSet(fill, 'fill/image/sourceSet', [
+    { uri: bufferUri, width, height }
+  ]);
+  engine.block.setFill(imageBlock, fill);
+
+  engine.block.setPositionXMode(imageBlock, 'Absolute');
+  engine.block.setPositionYMode(imageBlock, 'Absolute');
+  engine.block.setWidthMode(imageBlock, 'Absolute');
+  engine.block.setHeightMode(imageBlock, 'Absolute');
+  engine.block.setPositionX(imageBlock, 0);
+  engine.block.setPositionY(imageBlock, 0);
+  engine.block.setWidth(imageBlock, width);
+  engine.block.setHeight(imageBlock, height);
+
+  engine.block.appendChild(page, imageBlock);
+}
+
 export interface AppendTranslatedPageArgs {
   cesdk: CreativeEditorSDK;
   /** Page that contains `sourceBlockId`. Sets the new page's dimensions. */
