@@ -151,32 +151,23 @@ function registerPanel(
             const block = selectedImageBlock;
             if (!block) return;
             isRunning.setValue(true);
-            // Start the work only after the loading state has painted. Both
-            // pipelines begin with engine.block.export, which resolves the
-            // block's layout synchronously on the main thread (~hundreds of
-            // ms). Kicking it off in this click handler would block the very
-            // frame that paints the button spinner, so the spinner would lag
-            // the click. A double requestAnimationFrame resumes after the
-            // spinner frame has painted, making the indicator appear at once.
-            requestAnimationFrame(() =>
-              requestAnimationFrame(() => {
-                const run = isMagicLayers
-                  ? runMagicLayersTranslation({
-                      cesdk,
-                      block,
-                      languages: selectedLanguages
-                    })
-                  : runTranslation({
-                      cesdk,
-                      modelId: effectiveModelId,
-                      block,
-                      languages: selectedLanguages
-                    });
-                void run.finally(() => {
-                  isRunning.setValue(false);
-                });
-              })
-            );
+            requestAnimationFrame(() => {
+              const run = isMagicLayers
+                ? runMagicLayersTranslation({
+                    cesdk,
+                    block,
+                    languages: selectedLanguages
+                  })
+                : runTranslation({
+                    cesdk,
+                    modelId: effectiveModelId,
+                    block,
+                    languages: selectedLanguages
+                  });
+              void run.finally(() => {
+                isRunning.setValue(false);
+              });
+            });
           }
         });
       }

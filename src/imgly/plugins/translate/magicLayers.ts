@@ -86,7 +86,7 @@ export async function runMagicLayersTranslation(
     const sceneArchiveUrl = await client.generate(
       MAGIC_LAYERS_MODEL_ID,
       {
-        image_url: upload.asset_url
+        image_urls: [upload.asset_url]
       },
       {}
     );
