@@ -33,7 +33,7 @@ import { PhotoEditorConfig } from '../../photo-editor/plugin';
 import { setupBackgroundRemovalPlugin } from './plugins/background-removal';
 import { setupTranslatePlugin } from './plugins/translate';
 import type { TranslatePipeline } from './plugins/translate';
-import { DEFAULT_GATEWAY_URL } from './plugins/translate/providers';
+import { DEFAULT_GATEWAY_URL, FALLBACK_FONT_URI } from './plugins/translate/providers';
 
 export { PhotoEditorConfig } from '../../photo-editor/plugin';
 export { setupBackgroundRemovalPlugin } from './plugins/background-removal';
@@ -55,6 +55,13 @@ export async function initPhotoEditor(
   cesdk: CreativeEditorSDK,
   opts: InitPhotoEditorOpts
 ): Promise<void> {
+  // Missing-glyph fallback: translated Russian/Chinese text uses characters that
+  // the scene's embedded (Latin-subset) fonts don't contain. Without a fallback
+  // the engine renders those as tofu. Set unconditionally — harmless for the
+  // Direct pipeline (no editable text blocks) — and the font is fetched lazily by
+  // the engine only when a missing glyph is first encountered. See FALLBACK_FONT_URI.
+  cesdk.engine.editor.setSettingString('fallbackFontUri', FALLBACK_FONT_URI);
+
   // Configuration plugin (dock, navigation bar, features, etc.).
   await cesdk.addPlugin(new PhotoEditorConfig({ onBack: opts.onBack }));
 
