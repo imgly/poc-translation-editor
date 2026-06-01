@@ -121,19 +121,18 @@ export function bearerFromTokenResult(token: AiTokenResult): string {
   return typeof token === 'string' ? token : token.dangerouslyExposeApiKey;
 }
 
-let credentialsInstalled = false;
-
 /**
- * Register `ly.img.ai.getToken` on the cesdk instance.
+ * Register the `ly.img.ai.getToken` action on the given cesdk instance.
  *
- * Idempotent: safe to call multiple times. Necessary because the AI
- * plugins fetch their model schemas during `addPlugin`, which means the
- * action must already be registered before any plugin that uses it runs.
- * Callers commonly invoke this once explicitly in editor wiring AND once
- * from `setupTranslatePlugin`; the guard makes both paths safe.
+ * The custom Translate flow resolves tokens directly through its gateway
+ * client (see `translate.ts`), so it does not rely on this action. The
+ * registration is here so any official AI *provider* plugin added to this
+ * instance authenticates through the same credential source.
+ *
+ * Call once per instance: the action registry is per-instance, so each new
+ * editor (e.g. after navigating Back to the upload screen and re-entering)
+ * needs its own registration.
  */
 export function installAiCredentials(cesdk: CreativeEditorSDK): void {
-  if (credentialsInstalled) return;
-  credentialsInstalled = true;
   cesdk.actions.register('ly.img.ai.getToken', resolveAiToken);
 }

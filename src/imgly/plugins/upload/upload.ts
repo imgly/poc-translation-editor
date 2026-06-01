@@ -9,6 +9,7 @@
 
 import './upload.css';
 
+import { el } from '../../dom';
 import { DEFAULT_TRANSLATE_PIPELINE, TRANSLATE_PIPELINES } from '../translate';
 import type { TranslatePipeline } from '../translate';
 
@@ -216,15 +217,6 @@ export function renderUploadScreen(
 // ---------------------------------------------------------------------------
 // DOM helpers
 // ---------------------------------------------------------------------------
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  className?: string
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  return node;
-}
 
 function badge(content: string): HTMLElement {
   const span = el('span', 'tr-up-badge');

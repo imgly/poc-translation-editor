@@ -29,7 +29,6 @@ export function setupTranslatePlugin(
 ): void {
   const gatewayUrl = opts.gatewayUrl ?? DEFAULT_GATEWAY_URL;
   if (!opts.apiKey) {
-    // eslint-disable-next-line no-console
     console.warn(
       '[translate] No API key configured. Set VITE_AI_API_KEY in .env.'
     );

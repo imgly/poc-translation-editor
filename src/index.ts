@@ -30,7 +30,6 @@ setConfiguredApiKey(import.meta.env.VITE_AI_API_KEY ?? '');
 
 const container = document.querySelector<HTMLDivElement>('#cesdk_container');
 if (!container) {
-  // eslint-disable-next-line no-console
   console.error('No #cesdk_container element found.');
 } else {
   showCurrentScreen(container);
@@ -62,14 +61,12 @@ async function mountEditor(
       userId: 'starterkit-photo-translate-user'
     });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('Failed to initialize CE.SDK:', err);
     renderOnboardingScreen(root, { reason: 'invalid' });
     return;
   }
 
   // Debug access (remove in production).
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).cesdk = cesdk;
 
   await initPhotoEditor(cesdk, {
@@ -80,7 +77,6 @@ async function mountEditor(
   try {
     await loadImageIntoScene(cesdk, file);
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('Failed to load image into editor:', err);
     cesdk.ui.showNotification({
       type: 'error',
@@ -117,7 +113,6 @@ function navigateBackToUpload(
   cesdk: CreativeEditorSDK
 ): void {
   cesdk.dispose();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   delete (window as any).cesdk;
   showCurrentScreen(root);
 }

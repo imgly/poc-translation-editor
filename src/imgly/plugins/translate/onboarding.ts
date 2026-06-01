@@ -14,6 +14,7 @@
  *     dashboard and the `.env` file.
  */
 
+import { el } from '../../dom';
 import {
   clearUserApiKey,
   getUserApiKey,
@@ -229,15 +230,6 @@ function renderDeployedCard(card: HTMLElement, reason: OnboardingReason): void {
 // ---------------------------------------------------------------------------
 // Small DOM helpers
 // ---------------------------------------------------------------------------
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  className?: string
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  return node;
-}
 
 function text(content: string): Text {
   return document.createTextNode(content);

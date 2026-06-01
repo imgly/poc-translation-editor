@@ -64,9 +64,7 @@ export async function runMagicLayersTranslation(
   // replaces the document, destroying the source-image page we started from).
   let sourceBlob: Blob;
   try {
-    // Send the user's *original* bytes, not a re-render. Re-exporting the
-    // block to PNG re-encodes the photo losslessly, which balloons a source
-    // JPEG several-fold for no quality gain. The upload path stashes the
+    // Send the user's *original* bytes. The upload path stashes the
     // original file as an engine buffer (see upload/scene.ts), so we read
     // those exact bytes straight back. Fall back to a PNG export only if the
     // fill isn't a readable engine buffer.
@@ -88,8 +86,7 @@ export async function runMagicLayersTranslation(
     const sceneArchiveUrl = await client.generate(
       MAGIC_LAYERS_MODEL_ID,
       {
-        image_url: upload.asset_url,
-        image_urls: [upload.asset_url] // @REFACTOR: Are two attribues still needed?
+        image_url: upload.asset_url
       },
       {}
     );
@@ -132,7 +129,7 @@ export async function runMagicLayersTranslation(
     }
     const flatWidth = engine.block.getFrameWidth(templatePage);
     const flatHeight = engine.block.getFrameHeight(templatePage);
-    const originalPage = await insertImagePage({
+    const { page: originalPage } = await insertImagePage({
       engine,
       parent: pageParent,
       index: 0,
