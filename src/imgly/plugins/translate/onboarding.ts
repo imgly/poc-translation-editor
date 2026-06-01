@@ -29,10 +29,25 @@ const GATEWAY_DOCS_URL =
 const ENV_SNIPPET = `# .env (project root)
 VITE_AI_API_KEY=sk_your_api_key_here`;
 
-export type OnboardingReason = 'missing' | 'invalid';
+export type OnboardingReason =
+  /** No AI gateway API key configured. */
+  | 'missing'
+  /** AI gateway rejected the configured key. */
+  | 'invalid'
+  /**
+   * CE.SDK failed to initialize — most commonly the CE.SDK *license*
+   * (`VITE_CESDK_LICENSE`) is not valid for the domain the app is served
+   * from. This is a different credential from the AI gateway key.
+   */
+  | 'license';
 
 export interface RenderOnboardingScreenOpts {
   reason: OnboardingReason;
+  /**
+   * Raw error text to surface verbatim (e.g. the CE.SDK init error). Shown
+   * in a code block so the underlying cause isn't hidden behind generic copy.
+   */
+  detail?: string;
 }
 
 /**
@@ -50,6 +65,14 @@ export function renderOnboardingScreen(
   const card = el('div', 'tr-ob-card');
   container.appendChild(card);
   root.appendChild(container);
+
+  // A license/init failure is the same story in dev and prod (the license
+  // isn't something the visitor can paste into the AI-key field), so it has
+  // its own card rather than the PROD/dev key-onboarding split.
+  if (opts.reason === 'license') {
+    renderLicenseCard(card, opts.detail);
+    return;
+  }
 
   if (import.meta.env.PROD) {
     renderDeployedCard(card, opts.reason);
@@ -228,6 +251,64 @@ function renderDeployedCard(card: HTMLElement, reason: OnboardingReason): void {
 }
 
 // ---------------------------------------------------------------------------
+// License / editor-init failure variant
+// ---------------------------------------------------------------------------
+
+function renderLicenseCard(card: HTMLElement, detail?: string): void {
+  const badge = el('span', 'tr-ob-badge tr-ob-badge--invalid');
+  badge.textContent = 'Editor error';
+  card.appendChild(badge);
+
+  card.appendChild(titleEl("The editor couldn't start"));
+
+  const lead = el('p', 'tr-ob-lead');
+  lead.append(
+    text('CE.SDK could not initialize. This is the CE.SDK '),
+    strongEl('license'),
+    text(' ('),
+    codeEl('VITE_CESDK_LICENSE'),
+    text(
+      ') — a different credential from the AI gateway key. Most often the ' +
+        "license's allowed domains don't include the one this app is served " +
+        'from (e.g. a StackBlitz or other preview URL).'
+    )
+  );
+  card.appendChild(lead);
+
+  if (detail) card.appendChild(detailBlock(detail));
+
+  const steps = el('ol', 'tr-ob-steps');
+  steps.appendChild(
+    stepItem(
+      1,
+      stepText((p) => {
+        p.append(
+          text('Open your '),
+          strongEl('IMG.LY Dashboard'),
+          text(" and add this domain to the license's allowed domains.")
+        );
+      })
+    )
+  );
+  steps.appendChild(
+    stepItem(
+      2,
+      stepText((p) => {
+        p.append(text('Reload once the domain is allowed.'));
+      })
+    )
+  );
+  card.appendChild(steps);
+
+  card.appendChild(
+    actionsBar([
+      linkButton('Open IMG.LY Dashboard →', DASHBOARD_URL, 'primary'),
+      reloadButton()
+    ])
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Small DOM helpers
 // ---------------------------------------------------------------------------
 
@@ -264,6 +345,16 @@ function strongEl(content: string): HTMLElement {
 
 function codeBlock(content: string): HTMLElement {
   const pre = el('pre', 'tr-ob-codeblock');
+  pre.textContent = content;
+  return pre;
+}
+
+/**
+ * Like `codeBlock`, but wraps long lines and caps its height — for verbatim
+ * error text (which can be long and contain URLs) rather than short snippets.
+ */
+function detailBlock(content: string): HTMLElement {
+  const pre = el('pre', 'tr-ob-detail');
   pre.textContent = content;
   return pre;
 }

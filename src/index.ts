@@ -28,6 +28,36 @@ import {
 
 setConfiguredApiKey(import.meta.env.VITE_AI_API_KEY ?? '');
 
+// CE.SDK's create() rejects WITHOUT handing back the half-started engine, so a
+// failed init leaves a render/retry loop running that we cannot dispose() — it
+// pegs the CPU (fans spin). A full page reload is the only reliable teardown.
+// We stash the error across the reload so the next bootstrap can explain what
+// failed instead of silently looping.
+const INIT_ERROR_STORAGE = 'imgly.translate-demo.initError';
+
+function reportInitFailureAndReload(detail: string): void {
+  try {
+    window.sessionStorage.setItem(INIT_ERROR_STORAGE, detail);
+  } catch {
+    // sessionStorage unavailable (private mode / quota): reload anyway — the
+    // license screen still renders afterwards, just without the detail text.
+  }
+  window.location.reload();
+}
+
+function consumeInitError(): string | null {
+  try {
+    const detail = window.sessionStorage.getItem(INIT_ERROR_STORAGE);
+    if (detail != null) window.sessionStorage.removeItem(INIT_ERROR_STORAGE);
+    return detail;
+  } catch {
+    return null;
+  }
+}
+
+/** Guards against stacking engines if Continue is clicked more than once. */
+let editorMounting = false;
+
 const container = document.querySelector<HTMLDivElement>('#cesdk_container');
 if (!container) {
   console.error('No #cesdk_container element found.');
@@ -36,6 +66,14 @@ if (!container) {
 }
 
 function showCurrentScreen(root: HTMLDivElement): void {
+  // A previous editor init failed and we reloaded to kill the spinning
+  // engine. Show what went wrong; do NOT auto-mount — mounting only resumes
+  // on a fresh user action (uploading + Continue), so this state can't loop.
+  const initError = consumeInitError();
+  if (initError != null) {
+    renderOnboardingScreen(root, { reason: 'license', detail: initError });
+    return;
+  }
   if (!getApiKey()) {
     renderOnboardingScreen(root, { reason: 'missing' });
     return;
@@ -52,6 +90,10 @@ async function mountEditor(
   file: File,
   pipeline: TranslatePipeline
 ): Promise<void> {
+  // Ignore repeat Continue clicks: a second create() would boot a second
+  // engine before the first finishes.
+  if (editorMounting) return;
+  editorMounting = true;
   root.innerHTML = '';
 
   let cesdk: CreativeEditorSDK;
@@ -62,7 +104,10 @@ async function mountEditor(
     });
   } catch (err) {
     console.error('Failed to initialize CE.SDK:', err);
-    renderOnboardingScreen(root, { reason: 'invalid' });
+    // create() failing is a CE.SDK *license*/init problem, not the AI key.
+    // Reload to tear down the un-disposable half-booted engine; the license
+    // screen renders after the reload with this message.
+    reportInitFailureAndReload(err instanceof Error ? err.message : String(err));
     return;
   }
 
@@ -106,6 +151,8 @@ async function mountEditor(
     );
     await cesdk.engine.scene.zoomToBlock(firstPage, { padding: 80 });
   }
+
+  editorMounting = false;
 }
 
 function navigateBackToUpload(
@@ -114,6 +161,7 @@ function navigateBackToUpload(
 ): void {
   cesdk.dispose();
   delete (window as any).cesdk;
+  editorMounting = false;
   showCurrentScreen(root);
 }
 

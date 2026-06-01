@@ -146,6 +146,21 @@
   margin: 0;
 }
 
+.tr-ob-detail {
+  background: #111827;
+  color: #f9fafb;
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 17px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 160px;
+  overflow-y: auto;
+  margin: 0;
+}
+
 .tr-ob-actions {
   display: flex;
   gap: 12px;
