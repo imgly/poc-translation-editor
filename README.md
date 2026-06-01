@@ -129,6 +129,16 @@ return to the upload screen and pick the other option.
 > *Original + one page per language* rather than appending to the uploaded
 > image the way Direct does.
 
+> **Fonts in translated pages:** the scene embeds the fonts Layerize
+> identified, subset to the source image's glyphs — so a translation into a
+> different script (Russian, Chinese) has no glyph in the original font. The
+> editor sets the engine's `fallbackFontUri` to **Noto Sans CJK SC** (Latin +
+> Cyrillic + Simplified Chinese in one file), so the engine substitutes only
+> the missing glyphs while keeping each block's design font where it applies.
+> For convenience this font loads from jsdelivr; **for production, self-host it**
+> and point the URI at your own asset host (see `FALLBACK_FONT_URI` in
+> `src/imgly/plugins/translate/providers.ts`).
+
 ### Models (Direct pipeline)
 
 The Translate panel offers three image-edit models routed through the
