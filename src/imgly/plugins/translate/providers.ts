@@ -48,6 +48,23 @@ export const TRANSLATE_MODELS: readonly TranslateModel[] = [
  */
 export const MAGIC_LAYERS_MODEL_ID = 'imgly/image-to-scene';
 
+/**
+ * Missing-glyph fallback font for translated text.
+ *
+ * The Magic Layers scene embeds the fonts Layerize identified, subset to the
+ * source image's (Latin) glyphs — so translated Cyrillic/Han characters have no
+ * glyph and would render as tofu. Setting this as the engine's `fallbackFontUri`
+ * makes the engine substitute only the missing glyphs, per glyph, while keeping
+ * each block's design font for everything it can render.
+ *
+ * Noto Sans CJK SC covers Latin + Cyrillic + Simplified Chinese in one file, so
+ * it backs both the Russian and Chinese targets. Loaded from jsdelivr
+ * (CORS-enabled) so the demo runs on clone with no extra setup; for production,
+ * self-host this font and point `basePath`/this URI at your own asset host.
+ */
+export const FALLBACK_FONT_URI =
+  'https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf';
+
 export type TranslatePipeline = 'direct' | 'magic-layers';
 
 export interface TranslatePipelineSpec {
