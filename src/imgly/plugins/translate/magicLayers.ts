@@ -91,7 +91,13 @@ export async function runMagicLayersTranslation(
       {}
     );
 
-    const archiveBlob = await (await fetch(sceneArchiveUrl)).blob();
+    const resp = await fetch(sceneArchiveUrl);
+    if (!resp.ok) {
+      throw new Error(
+        `Fetching the generated scene archive failed with HTTP ${resp.status}.`
+      );
+    }
+    const archiveBlob = await resp.blob();
     archiveObjectUrl = URL.createObjectURL(archiveBlob);
   } catch (err) {
     console.error('Magic Layers: image-to-scene failed:', err);

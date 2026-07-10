@@ -213,8 +213,14 @@ export function renderUploadScreen(
 
   continueBtn.addEventListener('click', () => {
     if (!selectedFile) return;
-    // Don't revoke previewURL here — the editor still needs to read the
-    // bytes; the next renderUploadScreen call clears via root.innerHTML.
+    // The editor reads the bytes from the File itself (arrayBuffer), not
+    // from this object URL — it only backed the <img> preview, which is
+    // about to be torn down, so release it. Revoking does not invalidate
+    // the File.
+    if (previewURL) {
+      URL.revokeObjectURL(previewURL);
+      previewURL = null;
+    }
     opts.onContinue(selectedFile, selectedPipeline);
   });
 

@@ -6,9 +6,10 @@
  * any structural drift in the response (non-JSON, wrong length, non-
  * string entries) so the call site can mark the language as failed.
  *
- * The model is asked to translate the whole array in one shot. Cross-
- * block context yields more consistent terminology and register than N
- * independent per-block calls — see the Magic Layers spec for rationale.
+ * The model is asked to translate the whole array in one shot: the
+ * strings are pieces of one design, so cross-block context yields more
+ * consistent terminology and register than N independent per-block
+ * calls — and one request per language is cheaper and faster.
  */
 
 import { getGatewayClient } from './translate';

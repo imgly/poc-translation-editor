@@ -32,12 +32,13 @@ VITE_AI_API_KEY=sk_your_api_key_here`;
 export type OnboardingReason =
   /** No AI gateway API key configured. */
   | 'missing'
-  /** AI gateway rejected the configured key. */
-  | 'invalid'
   /**
    * CE.SDK failed to initialize — most commonly the CE.SDK *license*
    * (`VITE_CESDK_LICENSE`) is not valid for the domain the app is served
    * from. This is a different credential from the AI gateway key.
+   *
+   * Note: a *rejected* AI key (gateway 401) is not routed here — it
+   * surfaces as a failed-translation notification in the panel.
    */
   | 'license';
 
@@ -75,9 +76,9 @@ export function renderOnboardingScreen(
   }
 
   if (import.meta.env.PROD) {
-    renderDeployedCard(card, opts.reason);
+    renderDeployedCard(card);
   } else {
-    renderDevCard(card, opts.reason);
+    renderDevCard(card);
   }
 }
 
@@ -85,35 +86,15 @@ export function renderOnboardingScreen(
 // Dev variant: `.env` walkthrough
 // ---------------------------------------------------------------------------
 
-function renderDevCard(card: HTMLElement, reason: OnboardingReason): void {
-  const isMissing = reason === 'missing';
-
-  card.appendChild(badge(isMissing));
-  card.appendChild(
-    titleEl(
-      isMissing
-        ? 'Set up your IMG.LY API key'
-        : 'Your API key was rejected'
-    )
-  );
+function renderDevCard(card: HTMLElement): void {
+  card.appendChild(badge());
+  card.appendChild(titleEl('Set up your IMG.LY API key'));
 
   const lead = el('p', 'tr-ob-lead');
-  if (isMissing) {
-    lead.textContent =
-      'This demo routes every translation through the IMG.LY AI Gateway. ' +
-      'To unlock the gateway and the catalog of supported models, you need ' +
-      'an API key.';
-  } else {
-    lead.append(
-      text('The gateway rejected the value in '),
-      codeEl('VITE_AI_API_KEY'),
-      text(
-        '. The most likely cause is that the placeholder in .env was never ' +
-          'replaced with a real key. Less commonly, the key may be expired, ' +
-          'revoked, or scoped to a different account.'
-      )
-    );
-  }
+  lead.textContent =
+    'This demo routes every translation through the IMG.LY AI Gateway. ' +
+    'To unlock the gateway and the catalog of supported models, you need ' +
+    'an API key.';
   card.appendChild(lead);
 
   const steps = el('ol', 'tr-ob-steps');
@@ -170,26 +151,17 @@ function renderDevCard(card: HTMLElement, reason: OnboardingReason): void {
 // Deployed variant: paste-key form with localStorage persistence
 // ---------------------------------------------------------------------------
 
-function renderDeployedCard(card: HTMLElement, reason: OnboardingReason): void {
-  const isMissing = reason === 'missing';
+function renderDeployedCard(card: HTMLElement): void {
   const stored = getUserApiKey() ?? '';
 
-  card.appendChild(badge(isMissing));
-  card.appendChild(
-    titleEl(
-      isMissing
-        ? 'Set up your IMG.LY API key'
-        : 'Your API key was rejected'
-    )
-  );
+  card.appendChild(badge());
+  card.appendChild(titleEl('Set up your IMG.LY API key'));
 
   const lead = el('p', 'tr-ob-lead');
-  lead.textContent = isMissing
-    ? 'Paste an IMG.LY API key below to unlock the translation demo. The ' +
-      'key is saved in this browser only; it never leaves your machine.'
-    : 'The IMG.LY AI Gateway rejected the saved API key. Paste a different ' +
-      'key below — most commonly the saved key is expired, revoked, or ' +
-      'scoped to a different account.';
+  lead.textContent =
+    'Paste an IMG.LY API key below to unlock the translation demo. The ' +
+    'key is stored only in this browser and sent only to the IMG.LY AI ' +
+    'Gateway with your translation requests.';
   card.appendChild(lead);
 
   // Input group.
@@ -316,10 +288,9 @@ function text(content: string): Text {
   return document.createTextNode(content);
 }
 
-function badge(isMissing: boolean): HTMLElement {
+function badge(): HTMLElement {
   const span = el('span', 'tr-ob-badge');
-  if (!isMissing) span.classList.add('tr-ob-badge--invalid');
-  span.textContent = isMissing ? 'Setup required' : 'Invalid API key';
+  span.textContent = 'Setup required';
   return span;
 }
 

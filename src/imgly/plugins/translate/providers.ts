@@ -59,11 +59,13 @@ export const MAGIC_LAYERS_MODEL_ID = 'imgly/image-to-scene';
  *
  * Noto Sans CJK SC covers Latin + Cyrillic + Simplified Chinese in one file, so
  * it backs both the Russian and Chinese targets. Loaded from jsdelivr
- * (CORS-enabled) so the demo runs on clone with no extra setup; for production,
- * self-host this font and point `basePath`/this URI at your own asset host.
+ * (CORS-enabled) so the demo runs on clone with no extra setup, pinned to a
+ * release tag so the file can't move or change underneath the demo; for
+ * production, self-host this font and point `basePath`/this URI at your own
+ * asset host.
  */
 export const FALLBACK_FONT_URI =
-  'https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf';
+  'https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@Sans2.004/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf';
 
 export type TranslatePipeline = 'direct' | 'magic-layers';
 
