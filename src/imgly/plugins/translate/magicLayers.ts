@@ -161,6 +161,13 @@ export async function runMagicLayersTranslation(
       engine.block.setPositionY(originalPage, layersY);
     }
 
+    // The scene swap above yanked the camera to wherever the model's archive
+    // happened to be saved — visible as a zoom jump the moment the document
+    // loads. Snap-fit immediately (no animation) so the user looks at the
+    // Original + layers pages while the translations run below, instead of
+    // the archive's arbitrary camera for the whole round trip.
+    await zoomToScene(engine, { animate: false });
+
     // Snapshot the template's text once — this is the translation source.
     // DFS order is stable, so a duplicate's text blocks line up by index.
     const templateTextBlocks: number[] = [];
@@ -209,18 +216,10 @@ export async function runMagicLayersTranslation(
     // mutated the scene (renamed the layers page, prepended the Original page).
     engine.editor.addUndoStep();
 
-    // loadFromArchiveURL replaced the document *camera included* — the view
-    // is wherever the model's archive happened to be saved, which reads as a
-    // random zoom jump. Zoom out to frame the whole scene (all pages: the
-    // Original, the layers page, and every translation), animated so the
-    // reframe reads as a deliberate transition.
-    const scene = engine.scene.get();
-    if (scene != null) {
-      await engine.scene.zoomToBlock(scene, {
-        padding: 40,
-        animate: true
-      });
-    }
+    // Re-frame now that the translated pages exist (the snap-fit after the
+    // scene swap only saw Original + layers). Animated: it's a small,
+    // deliberate transition from an already-sensible view.
+    await zoomToScene(engine, { animate: true });
 
     if (failedLangs.length === 0) {
       cesdk.ui.showNotification({
@@ -254,6 +253,22 @@ export async function runMagicLayersTranslation(
       engine.block.setState(block, { type: 'Ready' });
     }
   }
+}
+
+/**
+ * Zoom out so the whole scene — every page — is in view. Zooming to the
+ * scene block frames the union of all pages (40px padding).
+ */
+async function zoomToScene(
+  engine: CreativeEditorSDK['engine'],
+  opts: { animate: boolean }
+): Promise<void> {
+  const scene = engine.scene.get();
+  if (scene == null) return;
+  await engine.scene.zoomToBlock(scene, {
+    padding: 40,
+    animate: opts.animate
+  });
 }
 
 /**
