@@ -69,10 +69,14 @@ export async function loadImageIntoScene(
     engine.block.appendChild(page, imageBlock);
 
     // Translated pages don't have a page-level image fill — only their
-    // graphic block does. Disable the page's image fill so the source
-    // page has the same render path. Visually identical: the graphic
-    // block fully covers the page.
+    // graphic block does. DESTROY the page's own image fill (not merely
+    // disable it): createFromImage pointed it at the object URL revoked
+    // in the finally below, and the engine's export waits on every page
+    // resource — a lingering fill with a dead blob: URI makes every
+    // export of this page hang forever. Visually identical either way:
+    // the graphic block fully covers the page.
     engine.block.setFillEnabled(page, false);
+    engine.block.destroy(engine.block.getFill(page));
   } finally {
     URL.revokeObjectURL(url);
   }
