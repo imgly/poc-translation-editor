@@ -209,6 +209,19 @@ export async function runMagicLayersTranslation(
     // mutated the scene (renamed the layers page, prepended the Original page).
     engine.editor.addUndoStep();
 
+    // loadFromArchiveURL replaced the document *camera included* — the view
+    // is wherever the model's archive happened to be saved, which reads as a
+    // random zoom jump. Zoom out to frame the whole scene (all pages: the
+    // Original, the layers page, and every translation), animated so the
+    // reframe reads as a deliberate transition.
+    const scene = engine.scene.get();
+    if (scene != null) {
+      await engine.scene.zoomToBlock(scene, {
+        padding: 40,
+        animate: true
+      });
+    }
+
     if (failedLangs.length === 0) {
       cesdk.ui.showNotification({
         type: 'success',
