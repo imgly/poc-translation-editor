@@ -318,8 +318,14 @@ async function runTranslation(args: RunArgs): Promise<void> {
       }
       // The new pages were appended to the right of the source page,
       // outside the current view. Zoom out (animated) so the user sees
-      // the source and every translation side by side.
-      await zoomToScene(engine, { animate: true });
+      // the source and every translation side by side. Best-effort: a
+      // zoom failure must not suppress the success notification below —
+      // the pages were added either way.
+      try {
+        await zoomToScene(engine, { animate: true });
+      } catch (err) {
+        console.error('Zoom to fit pages failed:', err);
+      }
     }
 
     if (failures.length === 0) {

@@ -1,5 +1,8 @@
 /**
- * Dock Configuration — Translate + Uploads only.
+ * Dock Configuration — Translate + Uploads.
+ *
+ * (The background-removal plugin appends a third "Apps" entry after this
+ * order is set — see src/imgly/plugins/background-removal.ts.)
  *
  * Both entries are structured `ly.img.assetLibrary.dock` items with their
  * own `isSelected` predicate (reactive — re-evaluated by CE.SDK on every

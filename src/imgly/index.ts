@@ -96,8 +96,8 @@ export async function initPhotoEditor(
 
   // Remaining asset source plugins. These power the inspector tools
   // (Blur / Effects / Filters / Crop / Colors / Typeface); sources whose
-  // UI isn't reachable in this two-entry dock (stickers, text, shapes)
-  // are intentionally not registered.
+  // UI isn't reachable in this dock (stickers, text, shapes) are
+  // intentionally not registered.
   await cesdk.addPlugin(new BlurAssetSource());
   await cesdk.addPlugin(new ImageColorsAssetSource());
   await cesdk.addPlugin(new ColorPaletteAssetSource());

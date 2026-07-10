@@ -90,7 +90,8 @@ point). Drop a photo that contains text, pick a translation pipeline (see
 below), click **Continue to editor**, and the photo opens in a Photo Editor
 UI with the Translate panel pre-opened and the image pre-selected.
 
-The dock contains exactly two entries: **Translate** and **Uploads**.
+The dock contains three entries: **Translate**, **Uploads**, and **Apps**
+(background removal).
 
 ### Pipelines
 
@@ -103,11 +104,13 @@ The upload screen lets the user pick between two translation pipelines:
 - **IMG.LY Magic Layers** — image-to-scene transformation with fully
   editable output. One `imgly/image-to-scene` gateway call converts the
   source image into an editable scene with real text layers. That scene
-  becomes the document (page 1, kept as the untranslated *Original*); for
-  each target language the page is duplicated and its text blocks are
-  batch-translated in one shot via `openai/gpt-5.4-mini` — the model sees
-  the full set of strings together, for consistent terminology and lower
-  cost. Every translated page is editable: click any text to change it.
+  becomes the document: page 1 is the flat, untouched source image
+  (*Original*), page 2 is the untranslated editable scene (*Original
+  (Layers)*); for each target language the layers page is duplicated and
+  its text blocks are batch-translated in one shot via
+  `openai/gpt-5.4-mini` — the model sees the full set of strings together,
+  for consistent terminology and lower cost. Every translated page is
+  editable: click any text to change it.
 
 The pipeline is fixed for the editor's lifetime. To switch, click Back to
 return to the upload screen and pick the other option.
@@ -151,9 +154,12 @@ no UI choice:
 
 ### Configuration
 
-1. Copy `.env.example` to `.env` and set `VITE_AI_API_KEY` to a key from the
-   [IMG.LY dashboard](https://img.ly/dashboard). (Optional:
-   `VITE_AI_GATEWAY_URL` to point at a non-production gateway.)
+1. Copy `.env.example` to `.env` and fill in both variables:
+   - `VITE_CESDK_LICENSE` — your CE.SDK license key
+     ([free trial](https://img.ly/forms/free-trial)).
+   - `VITE_AI_API_KEY` — an API key from the
+     [IMG.LY dashboard](https://img.ly/dashboard). (Optional:
+     `VITE_AI_GATEWAY_URL` to point at a non-production gateway.)
 2. Restart the dev server.
 
 If `VITE_AI_API_KEY` is unset, the app shows an onboarding screen instead

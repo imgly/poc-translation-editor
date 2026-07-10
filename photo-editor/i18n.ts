@@ -26,10 +26,10 @@ import type CreativeEditorSDK from '@cesdk/cesdk-js';
  * ```
  */
 export function setupTranslations(cesdk: CreativeEditorSDK): void {
-  // No overrides needed: the two dock entries bring their own labels
-  // (the translate plugin registers 'libraries.ly.img.translate.label';
-  // UploadAssetSources provides the Uploads label). Add overrides here
-  // like so:
+  // No overrides needed: each dock entry brings its own label — the
+  // translate plugin registers 'libraries.ly.img.translate.label',
+  // UploadAssetSources provides the Uploads label, and the background-
+  // removal plugin registers the Apps label. Add overrides here like so:
   //
   // cesdk.i18n.setTranslations({
   //   en: { 'libraries.ly.img.upload.label': 'My Photos' }

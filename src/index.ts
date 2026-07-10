@@ -174,7 +174,15 @@ function navigateBackToUpload(
   cesdk: CreativeEditorSDK,
   error?: string
 ): void {
-  cesdk.dispose();
+  // dispose() throws if called twice. That can happen when Back is clicked
+  // while mountEditor's tail is still awaiting: the pending engine call
+  // throws into mountEditor's catch, which navigates back a second time.
+  try {
+    cesdk.dispose();
+  } catch {
+    // Already disposed by an earlier Back — the screen swap below is
+    // idempotent, so just proceed.
+  }
   delete (window as any).cesdk;
   editorMounting = false;
   showCurrentScreen(root, error);

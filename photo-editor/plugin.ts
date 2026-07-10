@@ -10,7 +10,16 @@
  * import { PhotoEditorConfig } from './plugin';
  *
  * const cesdk = await CreativeEditorSDK.create('#editor', config);
- * await cesdk.addPlugin(new PhotoEditorConfig({ onBack: () => {} }));
+ * await cesdk.addPlugin(
+ *   new PhotoEditorConfig({
+ *     onBack: () => {},
+ *     translate: {
+ *       iconId: '@my-icons/translate',
+ *       panelId: '//my-app/panel/translate',
+ *       labelKey: 'libraries.my-app.translate.label'
+ *     }
+ *   })
+ * );
  * ```
  *
  * @see https://img.ly/docs/cesdk/js/user-interface/customization/disable-or-enable-f058e2/

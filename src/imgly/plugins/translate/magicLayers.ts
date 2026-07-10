@@ -101,9 +101,10 @@ export async function runMagicLayersTranslation(
     archiveObjectUrl = URL.createObjectURL(archiveBlob);
   } catch (err) {
     console.error('Magic Layers: image-to-scene failed:', err);
-    if (engine.block.isValid(block)) {
-      engine.block.setState(block, { type: 'Ready' });
-    }
+    // Block deleted / engine disposed (Back navigation) mid-request:
+    // nothing left to reset or notify.
+    if (!blockStillValid(engine, block)) return;
+    engine.block.setState(block, { type: 'Ready' });
     cesdk.ui.showNotification({
       type: 'error',
       message: 'Magic Layers: scene generation failed.',
@@ -249,9 +250,26 @@ export async function runMagicLayersTranslation(
     URL.revokeObjectURL(archiveObjectUrl);
     // The source block belongs to the document we replaced; only touch it
     // if the scene swap never happened (e.g. loadFromArchiveURL threw).
-    if (engine.block.isValid(block)) {
+    if (blockStillValid(engine, block)) {
       engine.block.setState(block, { type: 'Ready' });
     }
+  }
+}
+
+/**
+ * True if the engine is still alive and the block still exists. Used after
+ * awaits: the user may delete the block, or dispose the whole engine via
+ * the Back button, while a gateway request is in flight (isValid itself
+ * throws on a disposed engine, hence the try/catch).
+ */
+function blockStillValid(
+  engine: CreativeEditorSDK['engine'],
+  block: number
+): boolean {
+  try {
+    return engine.block.isValid(block);
+  } catch {
+    return false;
   }
 }
 

@@ -65,7 +65,7 @@ export function setupNavigationBar(
 ): void {
   cesdk.ui.setComponentOrder({ in: 'ly.img.navigation.bar' }, [
     // ============================
-    // Left Section - Back + Document Settings & History
+    // Left Section - Back + History
     // ============================
     {
       id: 'ly.img.back.navigationBar',
