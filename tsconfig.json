@@ -6,8 +6,7 @@
     "types": ["vite/client"],
     "moduleResolution": "bundler",
     "skipLibCheck": true,
-    "noImplicitAny": false,
-    "strict": false,
+    "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
@@ -15,6 +14,6 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["*.ts", "src/**/*.ts"],
+  "include": ["*.ts", "src/**/*.ts", "photo-editor/**/*.ts"],
   "exclude": ["*.mjs", "node_modules", "dist"]
 }

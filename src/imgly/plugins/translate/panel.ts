@@ -120,8 +120,7 @@ function registerPanel(
             inputLabel: 'panel.translate.model',
             values: dropdownValues,
             value: selectValue,
-            setValue: (v: { id: string; label: string }) =>
-              modelId.setValue(v.id)
+            setValue: (v) => modelId.setValue(v.id)
           });
         }
 
