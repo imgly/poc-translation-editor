@@ -85,6 +85,14 @@ export function setupNavigationBar(
     // Right Section - Actions
     // ============================
     'ly.img.zoom.navigationBar',
-    'ly.img.preview.navigationBar'
+    'ly.img.preview.navigationBar',
+    {
+      // Runs the `exportDesign` action registered in `photo-editor/actions.ts`
+      // (exports the current page and triggers a browser download). Without an
+      // explicit entry here no UI would trigger that action.
+      id: 'ly.img.exportImage.navigationBar',
+      onClick: () =>
+        cesdk.actions.run('exportDesign', { mimeType: 'image/png' })
+    }
   ]);
 }
