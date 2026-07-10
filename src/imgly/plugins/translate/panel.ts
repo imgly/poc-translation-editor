@@ -307,6 +307,15 @@ async function runTranslation(args: RunArgs): Promise<void> {
 
     if (added > 0) {
       engine.editor.addUndoStep();
+      // Clear the source block's Pending spinner BEFORE zooming — while a
+      // block is Pending the engine defers laying out the freshly appended
+      // pages, so they have no canvas position yet and zoomToBlock(scene)
+      // frames only the source page (verified empirically: with Pending the
+      // zoom lands at a single-page fit; with Ready it fits all pages). The
+      // guarded reset in the finally below stays as the error-path backstop.
+      if (engine.block.isValid(block)) {
+        engine.block.setState(block, { type: 'Ready' });
+      }
       // The new pages were appended to the right of the source page,
       // outside the current view. Zoom out (animated) so the user sees
       // the source and every translation side by side.

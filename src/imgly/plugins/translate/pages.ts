@@ -108,6 +108,13 @@ export async function zoomToScene(
 ): Promise<void> {
   const scene = engine.scene.get();
   if (scene == null) return;
+  // Yield one frame before measuring: pages appended moments ago (or while
+  // a block was Pending) don't have canvas positions until the engine's
+  // next layout pass. Zooming earlier frames only the already-positioned
+  // pages (verified: without this frame the fit missed the last page).
+  await new Promise<void>((resolve) =>
+    requestAnimationFrame(() => resolve())
+  );
   await engine.scene.zoomToBlock(scene, {
     padding: 40,
     animate: opts.animate
