@@ -9,36 +9,39 @@
 import type CreativeEditorSDK from '@cesdk/cesdk-js';
 
 import { setupTranslatePanel } from './panel';
-import { installAiCredentials, setConfiguredApiKey } from './credentials';
+import { getApiKey, installAiCredentials } from './credentials';
 import { DEFAULT_GATEWAY_URL } from './providers';
 import type { TranslatePipeline } from './providers';
 import { configureTranslate } from './translate';
 
 export interface SetupTranslatePluginOpts {
-  /** IMG.LY dashboard API key. '' means not configured. */
-  apiKey: string;
   /** Gateway URL. Defaults to https://gateway.img.ly. */
   gatewayUrl?: string;
   /** Pipeline chosen on the upload screen. */
   pipeline: TranslatePipeline;
 }
 
+/**
+ * The API key is NOT passed in here: `credentials.ts` is the single
+ * source of truth (env key seeded once by the bootstrap via
+ * `setConfiguredApiKey`, user-pasted key read from localStorage). The
+ * panel and the gateway client both resolve through `getApiKey()` so a
+ * key pasted on the deployed onboarding screen works everywhere.
+ */
 export function setupTranslatePlugin(
   cesdk: CreativeEditorSDK,
   opts: SetupTranslatePluginOpts
 ): void {
   const gatewayUrl = opts.gatewayUrl ?? DEFAULT_GATEWAY_URL;
-  if (!opts.apiKey) {
+  if (!getApiKey()) {
     console.warn(
       '[translate] No API key configured. Set VITE_AI_API_KEY in .env.'
     );
   }
-  setConfiguredApiKey(opts.apiKey);
   installAiCredentials(cesdk);
   configureTranslate({ gatewayUrl });
   setupTranslatePanel(cesdk, {
     gatewayUrl,
-    apiKey: opts.apiKey,
     pipeline: opts.pipeline
   });
 }

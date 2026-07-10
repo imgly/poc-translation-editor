@@ -68,11 +68,12 @@ export async function initPhotoEditor(
   // Background removal (works on the loaded photo).
   setupBackgroundRemovalPlugin(cesdk);
 
-  // Translate plugin (dock entry + panel + AI gateway credentials).
-  const apiKey = import.meta.env.VITE_AI_API_KEY ?? '';
+  // Translate plugin (dock entry + panel + AI gateway credentials). The
+  // API key is resolved inside the plugin via credentials.ts (env key
+  // seeded by src/index.ts, or a user-pasted key from onboarding).
   const gatewayUrl =
     import.meta.env.VITE_AI_GATEWAY_URL ?? DEFAULT_GATEWAY_URL;
-  setupTranslatePlugin(cesdk, { apiKey, gatewayUrl, pipeline: opts.pipeline });
+  setupTranslatePlugin(cesdk, { gatewayUrl, pipeline: opts.pipeline });
 
   // Asset source plugins.
   //

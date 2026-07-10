@@ -6,6 +6,7 @@
 
 import type CreativeEditorSDK from '@cesdk/cesdk-js';
 
+import { getApiKey } from './credentials';
 import { TARGET_LANGUAGES, TRANSLATE_MODELS } from './providers';
 import type { TranslatePipeline } from './providers';
 import { translateImage, TranslateError } from './translate';
@@ -26,8 +27,6 @@ const TRANSLATE_ICON_SVG = `
 
 export interface SetupTranslatePanelOpts {
   gatewayUrl: string;
-  /** Empty string means "not configured" — panel surfaces a clear toast. */
-  apiKey: string;
   /** Pipeline chosen on the upload screen. */
   pipeline: TranslatePipeline;
 }
@@ -66,7 +65,10 @@ function registerPanel(
   opts: SetupTranslatePanelOpts
 ): void {
   cesdk.ui.registerPanel(TRANSLATE_PANEL_ID, ({ builder, engine, state }) => {
-    const apiKeyConfigured = opts.apiKey.length > 0;
+    // Resolved on every render, not frozen at setup: on a deployed bundle
+    // the key arrives via localStorage (onboarding screen) rather than the
+    // env, and may be pasted after the plugin was set up.
+    const apiKeyConfigured = getApiKey().length > 0;
     const isMagicLayers = opts.pipeline === 'magic-layers';
 
     const modelId = state<string>('translate.modelId', TRANSLATE_MODELS[0].id);
