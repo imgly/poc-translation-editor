@@ -59,7 +59,7 @@ export async function insertImagePage(
   const { engine, parent, index, label, blob, width, height } = args;
   const placement = args.placement ?? { x: 0, y: 0, width, height };
 
-  // CE.SDK 1.75.x: createBuffer() is the correct method (not createBufferURI).
+  // createBuffer() is the correct method (not createBufferURI).
   // setBufferData requires an offset argument; there is no setMimeType on the
   // editor namespace — MIME type is inferred from the buffer content.
   const bufferUri = engine.editor.createBuffer();

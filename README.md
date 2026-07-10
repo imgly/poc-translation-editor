@@ -4,12 +4,6 @@ Translate the text inside a photograph using IMG.LY's CE.SDK + the IMG.LY
 AI Gateway. Upload an image, click Continue, pick languages, get one new
 page per translation — all in the browser.
 
-<p>
-  <a href="https://img.ly/docs/cesdk/js/starterkits/photo-editor-r6kq0u/">Photo Editor docs</a>
-</p>
-
-![Photo Translate Demo](./hero.webp)
-
 ## Getting Started
 
 ### Clone the Repository
