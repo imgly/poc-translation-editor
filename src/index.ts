@@ -65,7 +65,7 @@ if (!container) {
   showCurrentScreen(container);
 }
 
-function showCurrentScreen(root: HTMLDivElement): void {
+function showCurrentScreen(root: HTMLDivElement, error?: string): void {
   // A previous editor init failed and we reloaded to kill the spinning
   // engine. Show what went wrong; do NOT auto-mount — mounting only resumes
   // on a fresh user action (uploading + Continue), so this state can't loop.
@@ -79,6 +79,7 @@ function showCurrentScreen(root: HTMLDivElement): void {
     return;
   }
   renderUploadScreen(root, {
+    initialError: error,
     onContinue: (file, pipeline) => {
       void mountEditor(root, file, pipeline);
     }
@@ -111,57 +112,71 @@ async function mountEditor(
     return;
   }
 
-  // Debug access (remove in production).
-  (window as any).cesdk = cesdk;
+  // Debug access (dev builds only).
+  if (import.meta.env.DEV) (window as any).cesdk = cesdk;
 
-  await initPhotoEditor(cesdk, {
-    onBack: () => navigateBackToUpload(root, cesdk),
-    pipeline
-  });
-
+  // Unlike create() above, failures from here on leave a fully booted,
+  // disposable engine — so no reload is needed: dispose and return to the
+  // upload screen. Without this catch a network hiccup while the config
+  // plugins fetch CDN JSON would leave a blank screen and a permanently
+  // stuck `editorMounting` flag (Continue dead until a manual reload).
   try {
-    await loadImageIntoScene(cesdk, file);
-  } catch (err) {
-    console.error('Failed to load image into editor:', err);
-    cesdk.ui.showNotification({
-      type: 'error',
-      message: 'Could not load image — try a different file.',
-      duration: 'medium'
+    await initPhotoEditor(cesdk, {
+      onBack: () => navigateBackToUpload(root, cesdk),
+      pipeline
     });
-    navigateBackToUpload(root, cesdk);
-    return;
-  }
 
-  const imageBlock = findFirstImageBlockOnFirstPage(cesdk.engine);
-  if (imageBlock != null) cesdk.engine.block.select(imageBlock);
-  cesdk.ui.openPanel(TRANSLATE_PANEL_ID);
+    try {
+      await loadImageIntoScene(cesdk, file);
+    } catch (err) {
+      console.error('Failed to load image into editor:', err);
+      navigateBackToUpload(
+        root,
+        cesdk,
+        'Could not load that image — try a different file.'
+      );
+      return;
+    }
 
-  // Fit-to-page with a comfortable margin. createFromImage's default
-  // zoom fills the canvas edge-to-edge; we want some breathing room so
-  // the page edges read as a page, not as the canvas itself. Zoom after
-  // openPanel so the calculation uses the narrowed canvas width (panel
-  // already eats space on the right).
-  const [firstPage] = cesdk.engine.scene.getPages();
-  if (firstPage != null) {
-    // requestAnimationFrame yields one frame so the panel's DOM has
-    // settled and CE.SDK's camera knows the new viewport size before
-    // zoomToBlock computes the fit.
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => resolve())
+    const imageBlock = findFirstImageBlockOnFirstPage(cesdk.engine);
+    if (imageBlock != null) cesdk.engine.block.select(imageBlock);
+    cesdk.ui.openPanel(TRANSLATE_PANEL_ID);
+
+    // Fit-to-page with a comfortable margin. createFromImage's default
+    // zoom fills the canvas edge-to-edge; we want some breathing room so
+    // the page edges read as a page, not as the canvas itself. Zoom after
+    // openPanel so the calculation uses the narrowed canvas width (panel
+    // already eats space on the right).
+    const [firstPage] = cesdk.engine.scene.getPages();
+    if (firstPage != null) {
+      // requestAnimationFrame yields one frame so the panel's DOM has
+      // settled and CE.SDK's camera knows the new viewport size before
+      // zoomToBlock computes the fit.
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve())
+      );
+      await cesdk.engine.scene.zoomToBlock(firstPage, { padding: 80 });
+    }
+  } catch (err) {
+    console.error('Failed to set up the editor:', err);
+    navigateBackToUpload(
+      root,
+      cesdk,
+      'The editor failed to load — check your connection and try again.'
     );
-    await cesdk.engine.scene.zoomToBlock(firstPage, { padding: 80 });
+  } finally {
+    editorMounting = false;
   }
-
-  editorMounting = false;
 }
 
 function navigateBackToUpload(
   root: HTMLDivElement,
-  cesdk: CreativeEditorSDK
+  cesdk: CreativeEditorSDK,
+  error?: string
 ): void {
   cesdk.dispose();
   delete (window as any).cesdk;
   editorMounting = false;
-  showCurrentScreen(root);
+  showCurrentScreen(root, error);
 }
 

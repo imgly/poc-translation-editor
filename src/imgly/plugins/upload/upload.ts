@@ -15,6 +15,12 @@ import type { TranslatePipeline } from '../translate';
 
 export interface RenderUploadScreenOpts {
   onContinue: (file: File, pipeline: TranslatePipeline) => void;
+  /**
+   * Error to show immediately (e.g. the editor failed to mount and the
+   * bootstrap navigated back here). Uses the same inline slot as the
+   * non-image-drop error; cleared as soon as the user picks a file.
+   */
+  initialError?: string;
 }
 
 export function renderUploadScreen(
@@ -133,6 +139,8 @@ export function renderUploadScreen(
     errorMessage.textContent = message;
     errorMessage.hidden = false;
   }
+
+  if (opts.initialError) showError(opts.initialError);
 
   // ---- Drop zone renderers ----------------------------------------------
 
