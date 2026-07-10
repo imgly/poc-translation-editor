@@ -152,6 +152,9 @@ function registerPanel(
             const block = selectedImageBlock;
             if (!block) return;
             isRunning.setValue(true);
+            // One frame between setting isRunning and starting the actual
+            // work, so the button's spinner paints before the run's first
+            // synchronous chunk (image export) blocks the main thread.
             requestAnimationFrame(() => {
               const run = isMagicLayers
                 ? runMagicLayersTranslation({
@@ -165,9 +168,17 @@ function registerPanel(
                     block,
                     languages: selectedLanguages
                   });
-              void run.finally(() => {
-                isRunning.setValue(false);
-              });
+              run
+                .catch((err) => {
+                  // Both runners handle their expected failures internally
+                  // and resolve; this is the backstop for unexpected throws
+                  // (e.g. engine calls after a Back-navigation dispose) so
+                  // they don't surface as unhandled rejections.
+                  console.error('Translation run failed:', err);
+                })
+                .finally(() => {
+                  isRunning.setValue(false);
+                });
             });
           }
         });
@@ -316,7 +327,16 @@ async function runTranslation(args: RunArgs): Promise<void> {
       });
     }
   } finally {
-    engine.block.setState(block, { type: 'Ready' });
+    // The source block may be gone: deleted by the user, or the whole
+    // engine disposed via Back navigation while requests were in flight
+    // (isValid itself throws on a disposed engine, hence the try/catch).
+    try {
+      if (engine.block.isValid(block)) {
+        engine.block.setState(block, { type: 'Ready' });
+      }
+    } catch {
+      // Engine disposed — nothing left to reset.
+    }
   }
 }
 

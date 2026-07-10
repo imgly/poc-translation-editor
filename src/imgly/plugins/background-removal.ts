@@ -27,8 +27,6 @@ import type CreativeEditorSDK from '@cesdk/cesdk-js';
 import { removeBackground } from '@imgly/background-removal';
 import { resolveAssetPath } from '../resolveAssetPath';
 
-// Installed plugins
-
 const SOURCE_ID = 'ly.img.apps';
 
 /**
@@ -94,6 +92,20 @@ export function setupBackgroundRemovalPlugin(cesdk: CreativeEditorSDK): void {
 }
 
 /**
+ * True if the engine is still alive and the block still exists. Used after
+ * awaits: the user may delete the block, or dispose the whole engine via
+ * the Back button, while the removal model is running (isValid itself
+ * throws on a disposed engine, hence the try/catch).
+ */
+function blockStillValid(engine: CreativeEngine, block: number): boolean {
+  try {
+    return engine.block.isValid(block);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Converts buffer:// URI to Blob for processing.
  */
 async function convertUriToBlob(
@@ -137,6 +149,13 @@ async function applyBackgroundRemoval(cesdk: CreativeEditorSDK): Promise<void> {
   }
 
   const block = selectedBlocks[0];
+
+  // Already removing on this block (first run also downloads the ONNX
+  // model, which takes a while) — a second click would start a second
+  // concurrent removal racing the first one's setSourceSet.
+  if (engine.block.getState(block).type === 'Pending') {
+    return;
+  }
 
   // 2. Check if block supports fill
   if (!engine.block.supportsFill(block)) {
@@ -182,6 +201,15 @@ async function applyBackgroundRemoval(cesdk: CreativeEditorSDK): Promise<void> {
   try {
     const imageInput = await convertUriToBlob(imageUri, engine);
     const removedBackgroundBlob = await removeBackground(imageInput);
+
+    // The block may be gone by now: deleted by the user, or the whole
+    // engine disposed via the Back button while the model was running.
+    if (!blockStillValid(engine, block)) return;
+
+    // NOTE: this object URL is intentionally never revoked — the undo
+    // stack may restore the fill that references it at any later point.
+    // Acceptable for this demo (one leak per removal); a production app
+    // would track URLs and revoke them when the scene is torn down.
     const newImageUri = URL.createObjectURL(removedBackgroundBlob);
 
     // Update image
@@ -197,6 +225,9 @@ async function applyBackgroundRemoval(cesdk: CreativeEditorSDK): Promise<void> {
     engine.editor.addUndoStep();
   } catch (error) {
     console.error('Failed to remove background:', error);
+    // Block deleted / engine disposed mid-run: nothing left to reset or
+    // notify — the editor this notification belonged to is gone.
+    if (!blockStillValid(engine, block)) return;
     engine.block.setState(block, { type: 'Ready' });
     cesdk.ui.showNotification({
       type: 'error',
