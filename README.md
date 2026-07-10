@@ -5,7 +5,7 @@ AI Gateway. Upload an image, click Continue, pick languages, get one new
 page per translation — all in the browser.
 
 <p>
-  <a href="https://img.ly/docs/cesdk/js/starterkits/photo-editor-fp8h8a/">Photo Editor docs</a>
+  <a href="https://img.ly/docs/cesdk/js/starterkits/photo-editor-r6kq0u/">Photo Editor docs</a>
 </p>
 
 ![Photo Translate Demo](./hero.webp)
@@ -15,8 +15,8 @@ page per translation — all in the browser.
 ### Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd <repository-directory>
+git clone git@github.com:imgly/poc-translation-editor.git
+cd poc-translation-editor
 ```
 
 ### Install Dependencies
@@ -25,15 +25,9 @@ cd <repository-directory>
 npm install
 ```
 
-### Download Assets
-
-CE.SDK requires engine assets (fonts, icons, UI elements) served from your `public/` directory.
-
-```bash
-curl -O https://cdn.img.ly/packages/imgly/cesdk-js/$UBQ_VERSION$/imgly-assets.zip
-unzip imgly-assets.zip -d public/
-rm imgly-assets.zip
-```
+CE.SDK engine assets (fonts, icons, UI elements) load from the IMG.LY CDN
+by default — no download step is needed. To self-host them instead, see
+[Serve Assets](https://img.ly/docs/cesdk/js/serve-assets-b0827c/).
 
 ### Run the Development Server
 
@@ -51,7 +45,7 @@ Open `http://localhost:5173` in your browser.
 cesdk.ui.setTheme('dark'); // 'light' | 'dark' | 'system'
 ```
 
-See [Theming](https://img.ly/docs/cesdk/web/ui-styling/theming/) for custom color schemes and styling.
+See [Theming](https://img.ly/docs/cesdk/js/user-interface/appearance/theming-4b0938/) for custom color schemes and styling.
 
 ### Localization
 
@@ -62,7 +56,7 @@ cesdk.i18n.setTranslations({
 cesdk.i18n.setLocale('de');
 ```
 
-See [Localization](https://img.ly/docs/cesdk/web/ui-styling/localization/) for supported languages and translation keys.
+See [Localization](https://img.ly/docs/cesdk/js/user-interface/localization-508e20/) for supported languages and translation keys.
 
 ## Architecture
 
@@ -91,8 +85,8 @@ photo-translate-demo/
 
 | Issue | Solution |
 |-------|----------|
-| Editor doesn't load | Verify assets are accessible at `baseURL` |
-| Assets don't appear | Check `public/assets/` directory exists |
+| Editor doesn't load | Set `VITE_CESDK_LICENSE` in `.env` (see Configuration) |
+| Translate panel says key not configured | Set `VITE_AI_API_KEY` in `.env` and restart the dev server |
 | Watermark appears | Add your license key |
 
 ## How translation works
@@ -200,7 +194,7 @@ reload.
 
 ## Documentation
 
-For complete integration guides and API reference, visit the [Photo Editor Documentation](https://img.ly/docs/cesdk/starterkits/photo-editor/).
+For complete integration guides and API reference, visit the [Photo Editor Documentation](https://img.ly/docs/cesdk/js/starterkits/photo-editor-r6kq0u/).
 
 ## License
 
