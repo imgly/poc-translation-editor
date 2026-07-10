@@ -18,10 +18,7 @@
 
 import type CreativeEditorSDK from '@cesdk/cesdk-js';
 
-import {
-  TRANSLATE_ICON_ID,
-  TRANSLATE_PANEL_ID
-} from '../../src/imgly/plugins/translate';
+import type { PhotoEditorConfigOpts } from '../plugin';
 
 const ASSET_LIBRARY_PANEL_ID = '//ly.img.panel/assetLibrary';
 
@@ -39,7 +36,10 @@ const UPLOAD_PANEL_PAYLOAD = {
   title: 'libraries.ly.img.upload.label'
 };
 
-export function setupDock(cesdk: CreativeEditorSDK): void {
+export function setupDock(
+  cesdk: CreativeEditorSDK,
+  translate: PhotoEditorConfigOpts['translate']
+): void {
   const { engine, ui } = cesdk;
 
   engine.editor.setSetting('dock/hideLabels', false);
@@ -49,17 +49,17 @@ export function setupDock(cesdk: CreativeEditorSDK): void {
     {
       id: 'ly.img.assetLibrary.dock',
       key: 'ly.img.translate',
-      icon: TRANSLATE_ICON_ID,
-      label: 'libraries.ly.img.translate.label',
+      icon: translate.iconId,
+      label: translate.labelKey,
       entries: [],
-      isSelected: () => ui.isPanelOpen(TRANSLATE_PANEL_ID),
+      isSelected: () => ui.isPanelOpen(translate.panelId),
       onClick: () => {
-        if (ui.isPanelOpen(TRANSLATE_PANEL_ID)) {
-          ui.closePanel(TRANSLATE_PANEL_ID);
+        if (ui.isPanelOpen(translate.panelId)) {
+          ui.closePanel(translate.panelId);
           return;
         }
         ui.closePanel('*');
-        ui.openPanel(TRANSLATE_PANEL_ID);
+        ui.openPanel(translate.panelId);
       }
     },
     {

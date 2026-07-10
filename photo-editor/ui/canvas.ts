@@ -34,14 +34,12 @@ export function setupCanvas(cesdk: CreativeEditorSDK): void {
   // ============================================================================
 
   // #region Canvas Bar
+  // This demo shows no canvas bar. To add one, list components here, e.g.
+  // ['ly.img.spacer', 'ly.img.page.add.canvasBar', 'ly.img.spacer'] (and
+  // enable the matching features in features.ts).
   cesdk.ui.setComponentOrder(
     { in: 'ly.img.canvas.bar', at: 'bottom' /* Position: 'top' | 'bottom' */ },
-    [
-      'ly.img.settings.canvasBar',
-      'ly.img.spacer',
-      'ly.img.page.add.canvasBar',
-      'ly.img.spacer'
-    ]
+    []
   );
   // #endregion
 

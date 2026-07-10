@@ -21,22 +21,19 @@ import {
   EffectsAssetSource,
   FiltersAssetSource,
   PagePresetsAssetSource,
-  StickerAssetSource,
-  TextAssetSource,
-  TextComponentAssetSource,
   TypefaceAssetSource,
-  UploadAssetSources,
-  VectorShapeAssetSource
+  UploadAssetSources
 } from '@cesdk/cesdk-js/plugins';
 
 import { PhotoEditorConfig } from '../../photo-editor/plugin';
 import { setupBackgroundRemovalPlugin } from './plugins/background-removal';
-import { setupTranslatePlugin } from './plugins/translate';
+import {
+  setupTranslatePlugin,
+  TRANSLATE_ICON_ID,
+  TRANSLATE_PANEL_ID
+} from './plugins/translate';
 import type { TranslatePipeline } from './plugins/translate';
 import { DEFAULT_GATEWAY_URL, FALLBACK_FONT_URI } from './plugins/translate/providers';
-
-export { PhotoEditorConfig } from '../../photo-editor/plugin';
-export { setupBackgroundRemovalPlugin } from './plugins/background-removal';
 
 export interface InitPhotoEditorOpts {
   /** Click handler for the navigation-bar Back button. */
@@ -62,8 +59,19 @@ export async function initPhotoEditor(
   // the engine only when a missing glyph is first encountered. See FALLBACK_FONT_URI.
   cesdk.engine.editor.setSettingString('fallbackFontUri', FALLBACK_FONT_URI);
 
-  // Configuration plugin (dock, navigation bar, features, etc.).
-  await cesdk.addPlugin(new PhotoEditorConfig({ onBack: opts.onBack }));
+  // Configuration plugin (dock, navigation bar, features, etc.). The
+  // translate ids are handed over here so photo-editor/ never imports
+  // from app code.
+  await cesdk.addPlugin(
+    new PhotoEditorConfig({
+      onBack: opts.onBack,
+      translate: {
+        iconId: TRANSLATE_ICON_ID,
+        panelId: TRANSLATE_PANEL_ID,
+        labelKey: 'libraries.ly.img.translate.label'
+      }
+    })
+  );
 
   // Background removal (works on the loaded photo).
   setupBackgroundRemovalPlugin(cesdk);
@@ -86,8 +94,10 @@ export async function initPhotoEditor(
     new UploadAssetSources({ include: ['ly.img.image.upload'] })
   );
 
-  // Remaining asset source plugins — same set as the photo starter kit.
-  // These power inspector tools (Filters / Effects / Crop / etc.).
+  // Remaining asset source plugins. These power the inspector tools
+  // (Blur / Effects / Filters / Crop / Colors / Typeface); sources whose
+  // UI isn't reachable in this two-entry dock (stickers, text, shapes)
+  // are intentionally not registered.
   await cesdk.addPlugin(new BlurAssetSource());
   await cesdk.addPlugin(new ImageColorsAssetSource());
   await cesdk.addPlugin(new ColorPaletteAssetSource());
@@ -95,9 +105,5 @@ export async function initPhotoEditor(
   await cesdk.addPlugin(new EffectsAssetSource());
   await cesdk.addPlugin(new FiltersAssetSource());
   await cesdk.addPlugin(new PagePresetsAssetSource());
-  await cesdk.addPlugin(new StickerAssetSource());
-  await cesdk.addPlugin(new TextAssetSource());
-  await cesdk.addPlugin(new TextComponentAssetSource());
   await cesdk.addPlugin(new TypefaceAssetSource());
-  await cesdk.addPlugin(new VectorShapeAssetSource());
 }

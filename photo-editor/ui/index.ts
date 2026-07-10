@@ -8,7 +8,6 @@ import type CreativeEditorSDK from '@cesdk/cesdk-js';
 
 import type { PhotoEditorConfigOpts } from '../plugin';
 import { setupCanvas } from './canvas';
-import { setupComponents } from './components';
 import { setupDock } from './dock';
 import { setupInspectorBar } from './inspectorBar';
 import { setupNavigationBar } from './navigationBar';
@@ -19,16 +18,14 @@ export function setupUI(
   opts: PhotoEditorConfigOpts
 ): void {
   setupPanels(cesdk);
-  setupComponents(cesdk);
   setupNavigationBar(cesdk, opts);
   setupCanvas(cesdk);
   setupInspectorBar(cesdk);
-  setupDock(cesdk);
+  setupDock(cesdk, opts.translate);
 }
 
 export {
   setupCanvas,
-  setupComponents,
   setupDock,
   setupInspectorBar,
   setupNavigationBar,

@@ -71,7 +71,6 @@ export function setupNavigationBar(
       id: 'ly.img.back.navigationBar',
       onClick: () => opts.onBack()
     },
-    'ly.img.documentSettings.navigationBar',
     'ly.img.undoRedo.navigationBar',
 
     // ============================
@@ -85,7 +84,6 @@ export function setupNavigationBar(
     // Right Section - Actions
     // ============================
     'ly.img.zoom.navigationBar',
-    'ly.img.preview.navigationBar',
     {
       // Runs the `exportDesign` action registered in `photo-editor/actions.ts`
       // (exports the current page and triggers a browser download). Without an

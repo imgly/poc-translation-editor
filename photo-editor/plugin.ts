@@ -29,6 +29,19 @@ import { setupUI } from './ui';
 export interface PhotoEditorConfigOpts {
   /** Handler for the navigation-bar Back button. */
   onBack: () => void;
+  /**
+   * Dock entry for the host app's translate panel. Passed in (rather than
+   * imported from the translate plugin) so this config layer stays free of
+   * dependencies on app code and can be reused as-is.
+   */
+  translate: {
+    /** Icon id registered by the translate plugin's icon set. */
+    iconId: string;
+    /** Panel id the dock entry opens/closes. */
+    panelId: string;
+    /** i18n key for the dock entry label. */
+    labelKey: string;
+  };
 }
 
 /**
@@ -47,7 +60,6 @@ export class PhotoEditorConfig implements EditorPlugin {
   }
 
   async initialize(ctx: EditorPluginContext) {
-    const subscriptions: (() => void)[] = [];
     const { cesdk, engine } = ctx;
     if (cesdk) {
       cesdk.resetEditor();
@@ -55,20 +67,9 @@ export class PhotoEditorConfig implements EditorPlugin {
       setupUI(cesdk, this.opts);
       setupActions(cesdk);
       setupTranslations(cesdk);
-      setupOnReset(cesdk, subscriptions);
       setupSettings(engine);
-      // eslint-disable-next-line -- Intentional backward-compat shim.
+      // Intentional backward-compat shim.
       cesdk.reapplyLegacyUserConfiguration();
     }
   }
-}
-
-function setupOnReset(
-  cesdk: CreativeEditorSDK,
-  subscriptions: (() => void)[]
-): void {
-  cesdk.onReset(() => {
-    subscriptions.forEach((unsubscribe) => unsubscribe());
-    subscriptions.length = 0;
-  });
 }

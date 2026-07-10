@@ -104,21 +104,21 @@ export function setupSettings(engine: CreativeEngine): void {
   // #endregion
 
   // #region Page Title Settings
-  // Configure page title display
+  // Configure page title display.
+  //
+  // Translation runs name each added page after its language ("German",
+  // "Original (Layers)", …) — titles are how the user tells the pages
+  // apart, so they must be visible.
+  engine.editor.setSetting('page/title/show', true);
 
-  // Hide page titles (photo editor typically shows single image without titles)
-  engine.editor.setSetting('page/title/show', false);
+  // …but not while only the single uploaded photo exists (no ambiguity
+  // yet, and "Page 1" over a lone photo is noise).
+  engine.editor.setSetting('page/title/showOnSinglePage', false);
 
-  // Show title even when only one page exists
-  engine.editor.setSetting('page/title/showOnSinglePage', true);
-
-  // Include the template title in page titles
-  engine.editor.setSetting('page/title/showPageTitleTemplate', true);
-
-  // Append page name to the title
+  // Append the page's name (the language label) to the title
   engine.editor.setSetting('page/title/appendPageName', true);
 
-  // Separator between page number and name (e.g., "Page 1 - Photo")
+  // Separator between page number and name (e.g., "1 - German")
   engine.editor.setSetting('page/title/separator', '-');
 
   // Custom font for page titles (optional)
@@ -174,15 +174,16 @@ export function setupSettings(engine: CreativeEngine): void {
 
   // ============================================================================
   // PLACEHOLDER CONTROL SETTINGS
-  // Configure placeholder appearance for template editing
+  // Placeholder features are disabled in features.ts; uncomment these
+  // together with those features for template-editing workflows.
   // ============================================================================
 
   // #region Placeholder Settings
   // Show overlay pattern on placeholder elements
-  engine.editor.setSetting('placeholderControls/showOverlay', true);
+  // engine.editor.setSetting('placeholderControls/showOverlay', true);
 
   // Show button on placeholders for easy content replacement
-  engine.editor.setSetting('placeholderControls/showButton', true);
+  // engine.editor.setSetting('placeholderControls/showButton', true);
   // #endregion
 
   // ============================================================================
@@ -258,7 +259,7 @@ export function setupSettings(engine: CreativeEngine): void {
   // - 'Any': Allow both RGB and CMYK (default)
   // - 'RGB': Restrict to RGB colors only
   // - 'CMYK': Restrict to CMYK colors only
-  engine.editor.setSetting('colorPicker/colorMode', 'Any');
+  // engine.editor.setSetting('colorPicker/colorMode', 'RGB');
   // #endregion
 
   // ============================================================================

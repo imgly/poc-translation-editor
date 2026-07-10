@@ -26,12 +26,13 @@ import type CreativeEditorSDK from '@cesdk/cesdk-js';
  * ```
  */
 export function setupTranslations(cesdk: CreativeEditorSDK): void {
-  // Photo editor specific labels
-  cesdk.i18n.setTranslations({
-    en: {
-      'libraries.ly.img.sticker.label': 'Stickers',
-      'libraries.ly.img.vector.shape.label': 'Shapes',
-      'libraries.ly.img.text.label': 'Text'
-    }
-  });
+  // No overrides needed: the two dock entries bring their own labels
+  // (the translate plugin registers 'libraries.ly.img.translate.label';
+  // UploadAssetSources provides the Uploads label). Add overrides here
+  // like so:
+  //
+  // cesdk.i18n.setTranslations({
+  //   en: { 'libraries.ly.img.upload.label': 'My Photos' }
+  // });
+  void cesdk;
 }
