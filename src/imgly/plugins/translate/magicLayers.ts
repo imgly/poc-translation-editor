@@ -24,7 +24,7 @@
 import type CreativeEditorSDK from '@cesdk/cesdk-js';
 
 import { getGatewayClient } from './translate';
-import { insertImagePage } from './pages';
+import { insertImagePage, zoomToScene } from './pages';
 import { translateTexts } from './translateTexts';
 import { MAGIC_LAYERS_MODEL_ID, type TargetLanguage } from './providers';
 import { readOriginalImageBlob } from './sourceImage';
@@ -253,22 +253,6 @@ export async function runMagicLayersTranslation(
       engine.block.setState(block, { type: 'Ready' });
     }
   }
-}
-
-/**
- * Zoom out so the whole scene — every page — is in view. Zooming to the
- * scene block frames the union of all pages (40px padding).
- */
-async function zoomToScene(
-  engine: CreativeEditorSDK['engine'],
-  opts: { animate: boolean }
-): Promise<void> {
-  const scene = engine.scene.get();
-  if (scene == null) return;
-  await engine.scene.zoomToBlock(scene, {
-    padding: 40,
-    animate: opts.animate
-  });
 }
 
 /**

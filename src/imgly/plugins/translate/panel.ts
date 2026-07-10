@@ -10,7 +10,7 @@ import { getApiKey } from './credentials';
 import { TARGET_LANGUAGES, TRANSLATE_MODELS } from './providers';
 import type { TranslatePipeline } from './providers';
 import { translateImage, TranslateError } from './translate';
-import { appendTranslatedPage } from './pages';
+import { appendTranslatedPage, zoomToScene } from './pages';
 import { runMagicLayersTranslation } from './magicLayers';
 import { readOriginalImageBlob } from './sourceImage';
 
@@ -307,6 +307,10 @@ async function runTranslation(args: RunArgs): Promise<void> {
 
     if (added > 0) {
       engine.editor.addUndoStep();
+      // The new pages were appended to the right of the source page,
+      // outside the current view. Zoom out (animated) so the user sees
+      // the source and every translation side by side.
+      await zoomToScene(engine, { animate: true });
     }
 
     if (failures.length === 0) {

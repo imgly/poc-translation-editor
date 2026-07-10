@@ -96,6 +96,24 @@ export async function insertImagePage(
   return { page, imageBlock };
 }
 
+/**
+ * Zoom out so the whole scene — every page — is in view. Zooming to the
+ * scene block frames the union of all pages (40px padding). Used by both
+ * pipelines after they add translated pages, so the result is always shown
+ * framed rather than sitting off-screen next to the source page.
+ */
+export async function zoomToScene(
+  engine: Engine,
+  opts: { animate: boolean }
+): Promise<void> {
+  const scene = engine.scene.get();
+  if (scene == null) return;
+  await engine.scene.zoomToBlock(scene, {
+    padding: 40,
+    animate: opts.animate
+  });
+}
+
 export interface AppendTranslatedPageArgs {
   cesdk: CreativeEditorSDK;
   /** Page that contains `sourceBlockId`. Sets the new page's dimensions. */
