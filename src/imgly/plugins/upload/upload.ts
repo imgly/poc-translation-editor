@@ -10,8 +10,11 @@
 import './upload.css';
 
 import { el } from '../../dom';
+import { resolveAssetPath } from '../../resolveAssetPath';
 import { DEFAULT_TRANSLATE_PIPELINE, TRANSLATE_PIPELINES } from '../translate';
 import type { TranslatePipeline } from '../translate';
+
+const SAMPLE_IMAGE_PATH = '/assets/Sample.png';
 
 export interface RenderUploadScreenOpts {
   onContinue: (file: File, pipeline: TranslatePipeline) => void;
@@ -55,7 +58,13 @@ export function renderUploadScreen(
   dropZone.type = 'button';
   card.appendChild(dropZone);
 
-  // Inline error message (only shown for non-image drops).
+  // Sample image shortcut for users without a suitable photo at hand.
+  const sampleBtn = el('button', 'tr-up-sample') as HTMLButtonElement;
+  sampleBtn.type = 'button';
+  sampleBtn.textContent = 'Or use a sample image';
+  card.appendChild(sampleBtn);
+
+  // Inline error message (non-image drops, sample load failures).
   const errorMessage = el('p', 'tr-up-error');
   errorMessage.hidden = true;
   card.appendChild(errorMessage);
@@ -184,6 +193,20 @@ export function renderUploadScreen(
     }
     setSelected(file);
   }
+
+  sampleBtn.addEventListener('click', async () => {
+    sampleBtn.disabled = true;
+    try {
+      const response = await fetch(resolveAssetPath(SAMPLE_IMAGE_PATH));
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+      pickFile(new File([blob], 'Sample.png', { type: 'image/png' }));
+    } catch {
+      showError('Could not load the sample image. Try uploading your own.');
+    } finally {
+      sampleBtn.disabled = false;
+    }
+  });
 
   dropZone.addEventListener('click', () => {
     fileInput.value = '';

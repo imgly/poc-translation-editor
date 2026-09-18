@@ -125,6 +125,28 @@
   text-decoration: underline;
 }
 
+.tr-up-sample {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  align-self: center;
+  font: inherit;
+  font-size: 13px;
+  color: #5a5fff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.tr-up-sample:hover:not(:disabled) {
+  color: #4347e0;
+}
+
+.tr-up-sample:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
 .tr-up-error {
   margin: 0;
   font-size: 13px;
