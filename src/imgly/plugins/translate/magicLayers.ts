@@ -29,17 +29,40 @@ import { translateTexts } from './translateTexts';
 import { MAGIC_LAYERS_MODEL_ID, type TargetLanguage } from './providers';
 import { readOriginalImageBlob } from './sourceImage';
 
+/**
+ * The user-visible stages of a Magic Layers run, in order. The run takes
+ * long enough (the image-to-scene call dominates) that the panel lists
+ * these as a checklist so the user can see what is happening.
+ */
+export const MAGIC_LAYERS_STEPS = [
+  'upload',
+  'layers',
+  'scene',
+  'translate',
+  'pages'
+] as const;
+export type MagicLayersStep = (typeof MAGIC_LAYERS_STEPS)[number];
+
+export interface MagicLayersProgress {
+  step: MagicLayersStep;
+  /** Languages finished / requested — only set for the 'translate' step. */
+  done?: number;
+  total?: number;
+}
+
 export interface RunMagicLayersTranslationArgs {
   cesdk: CreativeEditorSDK;
   /** The source image block the user selected (or the fallback). */
   block: number;
   languages: readonly TargetLanguage[];
+  /** Called whenever the run enters a new stage (or advances within one). */
+  onProgress?: (progress: MagicLayersProgress) => void;
 }
 
 export async function runMagicLayersTranslation(
   args: RunMagicLayersTranslationArgs
 ): Promise<void> {
-  const { cesdk, block, languages } = args;
+  const { cesdk, block, languages, onProgress } = args;
   const engine = cesdk.engine;
 
   const client = getGatewayClient();
@@ -79,10 +102,12 @@ export async function runMagicLayersTranslation(
       (await engine.block.export(block, { mimeType: 'image/png' }));
     engine.block.setState(block, { type: 'Pending', progress: 0 });
 
+    onProgress?.({ step: 'upload' });
     const upload = await client.upload(
       sourceBlob,
       sourceBlob.type || 'image/png'
     );
+    onProgress?.({ step: 'layers' });
     const sceneArchiveUrl = await client.generate(
       MAGIC_LAYERS_MODEL_ID,
       {
@@ -115,6 +140,7 @@ export async function runMagicLayersTranslation(
 
   // --- Phase 2: load the scene + build a translated page per language -------
   try {
+    onProgress?.({ step: 'scene' });
     // Replace the current (source-image) document with the model's editable
     // scene. `overrideEditorConfig: false` keeps our dock/panel setup.
     await engine.scene.loadFromArchiveURL(archiveObjectUrl, false);
@@ -179,14 +205,23 @@ export async function runMagicLayersTranslation(
 
     // Translate every language in parallel (the gateway calls are the slow
     // part); apply the results to the scene sequentially below.
+    // Progress counts settled languages, failed ones included — it tracks
+    // how much waiting is left, not how many succeeded.
+    let settled = 0;
+    const total = languages.length;
+    onProgress?.({ step: 'translate', done: settled, total });
     const results = await Promise.allSettled(
       languages.map((lang) =>
         translateTexts({
           texts: originals,
           targetLanguagePromptName: lang.promptName
+        }).finally(() => {
+          settled++;
+          onProgress?.({ step: 'translate', done: settled, total });
         })
       )
     );
+    onProgress?.({ step: 'pages' });
 
     const failedLangs: string[] = [];
     let added = 0;

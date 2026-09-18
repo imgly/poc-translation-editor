@@ -11,8 +11,13 @@ import { TARGET_LANGUAGES, TRANSLATE_MODELS } from './providers';
 import type { TranslatePipeline } from './providers';
 import { translateImage, TranslateError } from './translate';
 import { appendTranslatedPage, zoomToScene } from './pages';
-import { runMagicLayersTranslation } from './magicLayers';
+import { MAGIC_LAYERS_STEPS, runMagicLayersTranslation } from './magicLayers';
+import type { MagicLayersProgress } from './magicLayers';
 import { readOriginalImageBlob } from './sourceImage';
+
+type PanelBuilder = Parameters<
+  Parameters<CreativeEditorSDK['ui']['registerPanel']>[1]
+>[0]['builder'];
 
 export const TRANSLATE_PANEL_ID = '//ly.img.panel/translate';
 const TRANSLATE_ICON_SET_ID = 'ly.img.translate';
@@ -55,6 +60,14 @@ function registerTranslations(cesdk: CreativeEditorSDK): void {
         'Choose at least one target language.',
       'panel.translate.hint.noApiKey':
         'AI API key not configured. Set VITE_AI_API_KEY in .env.',
+      'panel.translate.progress.upload': 'Uploading image',
+      'panel.translate.progress.layers':
+        'Converting image into editable layers',
+      'panel.translate.progress.scene': 'Loading the layered scene',
+      'panel.translate.progress.translate': 'Translating text',
+      'panel.translate.progress.pages': 'Building translated pages',
+      'panel.translate.progress.slowHint':
+        'This is the longest step and can take a minute or more.',
       'libraries.ly.img.translate.label': 'Translate'
     }
   });
@@ -77,6 +90,11 @@ function registerPanel(
       {}
     );
     const isRunning = state('translate.isRunning', false);
+    // Current Magic Layers stage; null when idle (and for Direct runs).
+    const progress = state<MagicLayersProgress | null>(
+      'translate.progress',
+      null
+    );
 
     const selection = engine.block.findAllSelected();
     // Selection wins; if the user hasn't selected an image block (or has
@@ -160,7 +178,8 @@ function registerPanel(
                 ? runMagicLayersTranslation({
                     cesdk,
                     block,
-                    languages: selectedLanguages
+                    languages: selectedLanguages,
+                    onProgress: (p) => progress.setValue(p)
                   })
                 : runTranslation({
                     cesdk,
@@ -177,14 +196,66 @@ function registerPanel(
                   console.error('Translation run failed:', err);
                 })
                 .finally(() => {
+                  progress.setValue(null);
                   isRunning.setValue(false);
                 });
             });
           }
         });
+
+        if (isRunning.value && progress.value != null) {
+          renderMagicLayersProgress(cesdk, builder, progress.value);
+        }
       }
     });
   });
+}
+
+/**
+ * Checklist of the Magic Layers stages below the Translate button:
+ * finished steps are ticked, the current one is marked (with a language
+ * counter while translating), upcoming ones are dimmed by an empty marker.
+ */
+function renderMagicLayersProgress(
+  cesdk: CreativeEditorSDK,
+  builder: PanelBuilder,
+  progress: MagicLayersProgress
+): void {
+  const currentIndex = MAGIC_LAYERS_STEPS.indexOf(progress.step);
+  MAGIC_LAYERS_STEPS.forEach((step, index) => {
+    let content = cesdk.i18n.translate(`panel.translate.progress.${step}`);
+    if (index < currentIndex) {
+      content = `✓ ${content}`;
+    } else if (index === currentIndex) {
+      if (progress.total != null) {
+        content += ` (${progress.done ?? 0}/${progress.total})`;
+      }
+      content = `● ${content}…`;
+    } else {
+      content = `○ ${content}`;
+    }
+    builder.Text(`translate.progress.${step}`, { content });
+    if (step === 'layers' && index === currentIndex) {
+      builder.Text('translate.progress.slowHint', {
+        content: cesdk.i18n.translate('panel.translate.progress.slowHint')
+      });
+    }
+  });
+}
+
+/**
+ * Blocks can support fills without having one assigned (e.g. a page with
+ * no fill, which is what gets selected when clicking the empty canvas of
+ * a newly added page). `getFill` then returns an invalid handle, and
+ * `getType` on it throws BLOCK.UNKNOWN — so check validity first.
+ */
+function hasImageFill(
+  engine: CreativeEditorSDK['engine'],
+  block: number
+): boolean {
+  const fill = engine.block.getFill(block);
+  if (!engine.block.isValid(fill)) return false;
+  return engine.block.getType(fill) === '//ly.img.ubq/fill/image';
 }
 
 function pickImageFillBlock(
@@ -194,8 +265,7 @@ function pickImageFillBlock(
   if (selection.length !== 1) return null;
   const block = selection[0];
   if (!engine.block.supportsFill(block)) return null;
-  const fill = engine.block.getFill(block);
-  if (engine.block.getType(fill) !== '//ly.img.ubq/fill/image') return null;
+  if (!hasImageFill(engine, block)) return null;
   return block;
 }
 
@@ -214,8 +284,7 @@ export function findFirstImageBlockOnFirstPage(
   if (firstPage == null) return null;
   for (const child of engine.block.getChildren(firstPage)) {
     if (!engine.block.supportsFill(child)) continue;
-    const fill = engine.block.getFill(child);
-    if (engine.block.getType(fill) === '//ly.img.ubq/fill/image') return child;
+    if (hasImageFill(engine, child)) return child;
   }
   return null;
 }
