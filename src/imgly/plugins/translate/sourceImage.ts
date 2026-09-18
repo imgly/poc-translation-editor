@@ -25,6 +25,8 @@ export function readOriginalImageBlob(
 ): Blob | null {
   if (!engine.block.supportsFill(block)) return null;
   const fill = engine.block.getFill(block);
+  // A fill-capable block may have no fill; getType on the invalid handle throws.
+  if (!engine.block.isValid(fill)) return null;
   if (engine.block.getType(fill) !== '//ly.img.ubq/fill/image') return null;
 
   const uri = engine.block.getSourceSet(fill, 'fill/image/sourceSet')[0]?.uri;

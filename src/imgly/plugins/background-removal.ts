@@ -170,7 +170,9 @@ async function applyBackgroundRemoval(cesdk: CreativeEditorSDK): Promise<void> {
   const fill = engine.block.getFill(block);
 
   // 3. Check if fill is an image fill
-  const fillType = engine.block.getType(fill);
+  const fillType = engine.block.isValid(fill)
+    ? engine.block.getType(fill)
+    : null;
   if (fillType !== '//ly.img.ubq/fill/image') {
     cesdk.ui.showNotification({
       type: 'error',
